@@ -1,0 +1,41 @@
+version: '3.8'
+
+volumes:
+  db_data: {}
+
+services:
+  db:
+    image: postgres:12.1-alpine
+    environment:
+      POSTGRES_PASSWORD: 1234
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+
+  backend:
+    build:
+      context: ./cats_warehouse-main (1)
+      dockerfile: docker/Dockerfile
+    command: bundle exec rails s -b 0.0.0.0
+    volumes:
+      - ./cats_warehouse-main (1):/opt/app
+    ports:
+      - 3000:3000
+    stdin_open: true
+    tty: true
+    depends_on:
+      - db
+    environment:
+      - RAILS_ENV=development
+
+  frontend:
+    image: node:16-alpine
+    working_dir: /app
+    volumes:
+      - ./cats-warehouse-main:/app
+    ports:
+      - 4200:4200
+    command: sh -c "yarn install && yarn start --host 0.0.0.0"
+    depends_on:
+      - backend
